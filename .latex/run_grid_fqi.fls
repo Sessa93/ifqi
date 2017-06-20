@@ -1,0 +1,6 @@
+PWD /Users/andrea/Desktop/Dropbox/Appunti/Thesis/ifqi/examples
+INPUT /usr/local/texlive/2016/texmf.cnf
+INPUT /usr/local/texlive/2016/texmf-dist/web2c/texmf.cnf
+INPUT /usr/local/texlive/2016/texmf-var/web2c/pdftex/pdflatex.fmt
+INPUT run_grid_fqi.py
+OUTPUT /Users/andrea/Desktop/Dropbox/Appunti/Thesis/ifqi/.latex/run_grid_fqi.log

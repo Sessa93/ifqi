@@ -74,7 +74,7 @@ def _eval_and_render_vectorial(mdp, policy, horizon=None, gamma=None, metric='di
                 if len(initial_states.shape) > 1 else 1
     values = np.zeros(n_episodes)
     steps = np.zeros(n_episodes)
-    if hasattr(mdp, 'horizon'):
+    if hasattr(mdp, 'gamma'):
         gamma = mdp.gamma
     else:
         gamma = gamma
@@ -107,7 +107,6 @@ def _eval_and_render_vectorial(mdp, policy, horizon=None, gamma=None, metric='di
 
         if render:
             mdp.render(mode='human')
-
         while t < H and not done:
             action = policy.draw_action(state, done, True)
             state, r, done, _ = mdp.step(action)
@@ -131,6 +130,7 @@ def _parallel_eval(mdp, policy, horizon, gamma, metric, initial_states, n_episod
     if initial_states is not None:
         n_episodes = initial_states.shape[0] \
             if len(initial_states.shape) > 1 else 1
+        print(n_episodes)
 
     if hasattr(mdp, 'spec') and mdp.spec is not None:
         if n_episodes < n_episodes_per_job:

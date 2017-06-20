@@ -11,6 +11,7 @@ from .synthetic import SyntheticToyFS
 from .utils import get_space_info
 from .gridworld import GridWorldEnv
 from .atari import Atari
+from .simplegrid import SimpleGrid
 
 __all__ = ['Acrobot', 'Atari', 'Bicycle', 'CarOnHill', 'CartPole', 'GridWorldEnv', 'Gym', 'InvPendulum',
-           'LQG1D', 'Swimmer', 'SwingPendulum', 'SyntheticToyFS']
+           'LQG1D', 'Swimmer', 'SwingPendulum', 'SyntheticToyFS','SimpleGrid']

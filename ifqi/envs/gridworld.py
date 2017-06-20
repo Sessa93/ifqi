@@ -23,6 +23,7 @@ class GridWorldEnv(gym.Env):
 
         # MDP parameters
         self.action_space = spaces.Discrete(9)
+        print(self.action_space)
         self.observation_space = spaces.Box(self.height * self._cell_size, self.width * self._cell_size, 1)
 
         # Reset
@@ -137,7 +138,7 @@ class Viewer:
                 x = random.randrange(1, self.width - 1) * self.cell_size  # Wall is randomly placed
             else:
                 x = self.width / 2 * self.cell_size  # Wall is in the middle
-            for y in range(self.height / 2):
+            for y in range(int(self.height / 2)):
                 self.wall_pos.add((x, y * self.cell_size))
 
     def reset_agent(self):

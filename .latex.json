@@ -1,0 +1,11 @@
+{
+  "projectPath": "/Users/andrea/Desktop/Dropbox/Appunti/Thesis/ifqi",
+  "title": "LaTeX-Plus Project",
+  "root": "examples/run_grid_fqi.py",
+  "program": "pdflatex",
+  "latexmkOptions": "-bibtex -pdf -shell-escape",
+  "output": ".latex",
+  "openOutput": "true",
+  "postAction": "link",
+  "postPath": ""
+}
