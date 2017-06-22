@@ -21,7 +21,7 @@ class Task:
         self.data = data
 
 def labelSample(task, tasks, sample):
-    eps = 0.1
+    eps = 0.5
 
     reward_idx = 3
     sast = np.append(task.data[:, :reward_idx],
@@ -38,17 +38,18 @@ def labelSample(task, tasks, sample):
             rws.append(R[i])
             if SAS[i,3] == sample[4] and SAS[i,4] == sample[5]:
                 c += 1
-        total += 1
+            total += 1
 
     std = np.std(rws)
+    m = sample[3]
 
     if std == 0:
-        if sample[3] == np.mean(rws):
+        if m == np.mean(rws):
             pr = 1
         else:
             pr = 0
     else:
-        pr = scipy.stats.norm(loc=np.mean(rws), scale=std).pdf(sample[3])
+        pr = scipy.stats.norm(loc=np.mean(rws), scale=std).cdf(m+eps) - scipy.stats.norm(loc=np.mean(rws), scale=std).cdf(m-eps)
 
 
     if total > 0:
@@ -67,6 +68,7 @@ def labelSample(task, tasks, sample):
                               axis=1)
             R = tsk.data[:, reward_idx]
             SAS = sast[:,:5]
+            #print(sample)
             rws = []
             c = 0
             total = 0
@@ -75,39 +77,35 @@ def labelSample(task, tasks, sample):
                     rws.append(R[i])
                     if SAS[i,3] == sample[4] and SAS[i,4] == sample[5]:
                         c += 1
-                total += 1
+                    total += 1
 
-            std = np.std(rws)
-            if std == 0:
-                if sample[3] == np.mean(rws):
-                    q = 1
+            if len(rws) > 0:
+                std = np.std(rws)
+                if std == 0:
+                    if m == np.mean(rws):
+                        q = 1
+                    else:
+                        q = 0
                 else:
-                    q = 0
+                    q = scipy.stats.norm(loc=np.mean(rws), scale=std).cdf(m+eps) - scipy.stats.norm(loc=np.mean(rws), scale=std).cdf(m-eps)
             else:
-                q = scipy.stats.norm(loc=np.mean(rws), scale=std).pdf(sample[3])
-
-            if np.isnan(std):
-                print(rws)
-
-            if np.isnan(q):
-                QR.append(0)
-                print("NAN Q STD: "+str(std)+" R: "+str(sample[3]))
-            else:
-                QR.append(q)
+                q = 0
+            QR.append(q)
 
             if total > 0:
                 QP.append(c/total)
             else:
                 QP.append(0)
-    qp = min(QP)
-    qr = min(QR)
+
+    qp = max(QP)
+    qr = max(QR)
+    #print(qp)
 
     wp = qp/pp
     wr = qr/pr
-    if np.abs(wp) > 20:
-        wp = 0
-    if np.abs(wr) > 20:
-        wr = 0
+
+
+    #print([wp,wr])
     return [sample[0],sample[1],sample[2],sample[3],sample[4],sample[5],sample[6],sample[7],wp,wr]
 
 """
@@ -121,23 +119,17 @@ Journal of Machine Learning Research 6.Apr (2005): 503-556.
 
 np.random.seed(32)
 
-target_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0)
-source1_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.05) # Very similar
-source2_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,3]),10,5,eps=0.1) # Not so similar
-source3_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1) # Definitely not similar
-source4_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-source5_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-source6_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-source7_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-source8_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-source9_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-source10_mdp = envs.SimpleGrid(np.array([0,2]),np.array([9,2]),10,5,eps=0.1)
-
+target_mdp = envs.SimpleGrid(np.array([0,2]),np.array([4,1]),10,5,eps=0)
+source1_mdp = envs.SimpleGrid(np.array([0,2]),np.array([4,1]),10,5,eps=0.05) # Very similar
+source2_mdp = envs.SimpleGrid(np.array([0,2]),np.array([4,1]),10,5,eps=0.1) # Not so similar
+source3_mdp = envs.SimpleGrid(np.array([0,2]),np.array([4,1]),10,5,eps=0.1) # Definitely not similar
+source4_mdp = envs.SimpleGrid(np.array([0,3]),np.array([4,1]),10,5,eps=0.1)
+source5_mdp = envs.SimpleGrid(np.array([0,2]),np.array([4,1]),10,5,eps=0.05)
 
 
 state_dim, action_dim, reward_dim = envs.get_space_info(target_mdp)
 assert reward_dim == 1
-regressor_params = {'n_estimators': 20,
+regressor_params = {'n_estimators': 30,
                     'criterion': 'mse',
                     'min_samples_split': 5,
                     'min_samples_leaf': 2,
@@ -154,21 +146,16 @@ regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 #regressor = Ensemble(ExtraTreesRegressor, **regressor_params)
 regressor = ActionRegressor(regressor, discrete_actions=discrete_actions, tol=.1)
 
-data_target = Task('target',evaluation.collect_episodes(target_mdp, n_episodes=5))
-data_s1 = Task('Source_1',evaluation.collect_episodes(source1_mdp, n_episodes=10))
-data_s2 = Task('Source_2',evaluation.collect_episodes(source2_mdp, n_episodes=10))
-data_s3 = Task('Source_3',evaluation.collect_episodes(source3_mdp, n_episodes=10))
-data_s4 = Task('Source_4',evaluation.collect_episodes(source4_mdp, n_episodes=10))
-data_s5 = Task('Source_5',evaluation.collect_episodes(source5_mdp, n_episodes=10))
-data_s6 = Task('Source_6',evaluation.collect_episodes(source6_mdp, n_episodes=10))
-data_s7 = Task('Source_7',evaluation.collect_episodes(source7_mdp, n_episodes=10))
-data_s8 = Task('Source_8',evaluation.collect_episodes(source8_mdp, n_episodes=10))
-data_s9 = Task('Source_9',evaluation.collect_episodes(source9_mdp, n_episodes=10))
-data_s10 = Task('Source_10',evaluation.collect_episodes(source10_mdp, n_episodes=10))
-tasks = [data_target,data_s1,data_s2,data_s3,data_s4,data_s5,data_s6,data_s7,data_s8,data_s9,data_s10]
+data_target = Task('target',evaluation.collect_episodes(target_mdp, n_episodes=3))
+data_s1 = Task('Source_1',evaluation.collect_episodes(source1_mdp, n_episodes=5))
+data_s2 = Task('Source_2',evaluation.collect_episodes(source2_mdp, n_episodes=5))
+data_s3 = Task('Source_3',evaluation.collect_episodes(source3_mdp, n_episodes=5))
+data_s4 = Task('Source_4',evaluation.collect_episodes(source4_mdp, n_episodes=5))
+data_s5 = Task('Source_5',evaluation.collect_episodes(source5_mdp, n_episodes=5))
+tasks = [data_target,data_s1,data_s2,data_s3,data_s4,data_s5]
 
 print("Target size: "+str(len(data_target.data)))
-print("Source size: "+str(len(data_s1.data)+len(data_s2.data)+len(data_s3.data)))
+#print("Source size: "+str(len(data_s1.data)+len(data_s2.data)+len(data_s3.data)))
 
 """
 tsk = data_s3
@@ -232,15 +219,18 @@ values = evaluation.evaluate_policy(target_mdp, wfqi, n_episodes=10)
 print(values)
 
 
-iterations = 50
-iteration_values = []
+iterations = 30
+transfer = []
+#plt.title('Performance with transfer - average case')
+plt.xlabel('WFQI iterations')
+plt.ylabel('Discounted expected reward')
 for i in range(iterations - 1):
     wfqi.partial_fit(None, None, None, None, **fit_params)
 
     values = evaluation.evaluate_policy(target_mdp, wfqi, n_episodes=15,horizon=100)
     print(values)
-    iteration_values.append(values[0])
-
+    transfer.append(values[0])
+    """
     if i == 1:
         fig1 = plt.figure(1)
         ax = fig1.add_subplot(1, 1, 1)
@@ -255,4 +245,40 @@ for i in range(iterations - 1):
         plt.ylim(min(iteration_values), max(iteration_values))
         plt.xlim(0, i + 1)
         plt.show()
+    """
+
+print("NO TRANSFER")
+wfqi = WFQI(estimator=regressor,
+          state_dim=state_dim,
+          action_dim=action_dim,
+          discrete_actions=discrete_actions,
+          gamma=target_mdp.gamma,
+          horizon=fqi_iterations,
+          verbose=True)
+no_transfer = []
+reward_idx = state_dim + action_dim
+dataset = data_target.data
+sast = np.append(dataset[:, :reward_idx],
+                  dataset[:, reward_idx + reward_dim:reward_idx + reward_dim+3],
+                  axis=1)
+r = dataset[:, reward_idx]
+wp = 1
+wr = 1
+wfqi.partial_fit(sast,r,wp,wr, **fit_params)
+values = evaluation.evaluate_policy(target_mdp, wfqi, n_episodes=10)
+print(values)
+for i in range(iterations - 1):
+    wfqi.partial_fit(None, None, None, None, **fit_params)
+
+    values = evaluation.evaluate_policy(target_mdp, wfqi, n_episodes=15,horizon=100)
+    print(values)
+    no_transfer.append(values[0])
+#
+
+line1, = plt.plot(list(range(iterations-1)),transfer,'ro-',label='WFQI')
+line2, = plt.plot(list(range(iterations-1)),no_transfer,'b+-',label='FQI')
+
+plt.legend(handles=[line1,line2], loc=4)
+plt.savefig('perfMAX.eps', format='eps', dpi=1200)
+plt.show()
 s = input()

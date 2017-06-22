@@ -14,7 +14,6 @@ from ifqi.models.ensemble import Ensemble
 """
 Simple script to quickly run fqi. It solves the Acrobot environment according
 to the experiment presented in:
-
 Ernst, Damien, Pierre Geurts, and Louis Wehenkel.
 "Tree-based batch mode reinforcement learning."
 Journal of Machine Learning Research 6.Apr (2005): 503-556.
@@ -29,7 +28,6 @@ regressor_params = {'n_estimators': 50,
                     'min_samples_leaf': 2,
                     'input_scaled': False,
                     'output_scaled': False}
-
 discrete_actions = mdp.action_space.values
 
 # ExtraTrees
@@ -37,10 +35,11 @@ regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 
 # Action regressor of Ensemble of ExtraTreesEnsemble
 # regressor = Ensemble(ExtraTreesRegressor, **regressor_params)
-#regressor = ActionRegressor(regressor, discrete_actions=discrete_actions, tol=5)
+regressor = ActionRegressor(regressor, discrete_actions=discrete_actions,
+                            tol=5, **regressor_params)
 
-dataset = evaluation.collect_episodes(mdp, n_episodes=100)
-#check_dataset(dataset, state_dim, action_dim, reward_dim) # this is just a
+dataset = evaluation.collect_episodes(mdp, n_episodes=1000)
+check_dataset(dataset, state_dim, action_dim, reward_dim) # this is just a
 # check, it can be removed in experiments
 print('Dataset has %d samples' % dataset.shape[0])
 
@@ -61,17 +60,17 @@ fqi = FQI(estimator=regressor,
           verbose=True)
 
 fit_params = {}
-#fit_params = {
+# fit_params = {
 #     "n_epochs": 300,
 #     "batch_size": 50,
 #     "validation_split": 0.1,
 #     "verbosity": False,
 #     "criterion": "mse"
-#}
+# }
 
 fqi.partial_fit(sast, r, **fit_params)
 
-iterations = 5
+iterations = 20
 iteration_values = []
 for i in range(iterations - 1):
     fqi.partial_fit(None, None, **fit_params)

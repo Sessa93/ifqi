@@ -20,7 +20,6 @@ class CarOnHill(gym.Env):
     """
     The Car On Hill environment as presented in:
     "Tree-Based Batch Mode Reinforcement Learning, D. Ernst et. al."
-
     """
     metadata = {
         'render.modes': ['human', 'rgb_array'],
@@ -28,14 +27,14 @@ class CarOnHill(gym.Env):
     }
 
     def __init__(self):
-        self.horizon = 20
-        self.gamma = 0.8
+        self.horizon = 100
+        self.gamma = 0.95
 
         self.max_pos = 1.
         self.max_velocity = 3.
 
         self._g = 9.81
-        self._m = 2
+        self._m = 1
         self._dt = .1
 
         # gym attributes
@@ -65,11 +64,11 @@ class CarOnHill(gym.Env):
         if self._state[0] < -self.max_pos or \
                 np.abs(self._state[1]) > self.max_velocity:
             self._absorbing = True
-            reward = -10
+            reward = -1
         elif self._state[0] > self.max_pos and \
                 np.abs(self._state[1]) <= self.max_velocity:
             self._absorbing = True
-            reward = 10
+            reward = 1
         else:
             reward = 0
 

@@ -9,7 +9,6 @@ from scipy.integrate import odeint
 import ifqi.utils.spaces as fqispaces
 
 
-
 register(
     id='SimpleGrid-v0',
     entry_point='ifqi.envs.simpleGrid:SimpleGrid'
@@ -18,7 +17,7 @@ register(
 
 class SimpleGrid(gym.Env):
     """
-    Simple grid-world environment without walls
+    Simple grid-world environment with walls and 4 directions (N,S,E,W)
 
     """
     metadata = {
@@ -98,7 +97,7 @@ class SimpleGrid(gym.Env):
             new_y = y
 
         new_state = np.array([new_x,new_y])
-        if new_x == 9 and new_y == 2:
+        if new_x == self.goal[0] and new_y == self.goal[1]:
             #ßprint("GOAL!")
             self._absorbing = True
         else:
@@ -125,5 +124,7 @@ class SimpleGrid(gym.Env):
     def calculateReward(self,state):
         #print(str(state[0])+","+str(state[1]))
         if self.goal[0] == state[0] and self.goal[1] == state[1]:
-            return 10
-        return (-10+state[0])/2
+            return 1
+        if state[0] <= 4:
+            return (-5+state[0])
+        return -(state[0]-4)
