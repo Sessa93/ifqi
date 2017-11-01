@@ -22,16 +22,19 @@ class Acrobot(gym.Env):
         'video.frames_per_second': 15
     }
 
-    def __init__(self):
+    def __init__(self,l1,l2,m1,m2,com1,com2):
         self.horizon = 100
         self.gamma = .95
 
         self.max_action = 5
 
         self._g = 9.81
-        self._M1 = self._M2 = 1
-        self._L1 = self._L2 = 1
-        self._mu1 = self._mu2 = .01
+        self._M1 = m1
+        self._M2 = m2
+        self._L1 = l1
+        self._L2 = l2
+        self._mu1 = com1
+        self._mu2 = com2
         self._dt = .1
 
         # gym attributes
@@ -41,8 +44,9 @@ class Acrobot(gym.Env):
         self.action_space = fqispaces.DiscreteValued([-5, 5], decimals=0)
 
         # evaluation initial states
-        self.initial_states = np.zeros((41, 4))
-        self.initial_states[:, 0] = np.linspace(-2, 2, 41)
+        N_IN = 5
+        self.initial_states = np.zeros((N_IN, 4))
+        self.initial_states[:, 0] = np.linspace(-2, 2, N_IN)
 
         # initialize state
         self.seed()
@@ -66,17 +70,21 @@ class Acrobot(gym.Env):
 
         self._state = x
 
-        reward = 0
+        #reward = 0
+        #if d < 1:
+            #self._absorbing = True
+            #reward = 1 - d
+        reward = -1
         if d < 1:
             self._absorbing = True
-            reward = 1 - d
+            reward = 0
 
         return self.get_state(), reward, self._absorbing, {}
 
     def reset(self, state=None):
         self._absorbing = False
         if state is None:
-            theta1 = self._wrap2pi(self.np_random.uniform(low=-np.pi + 1,
+            theta1 = self._wrap2pi(np.random.uniform(low=-np.pi + 1,
                                                           high=np.pi - 1))
             theta2 = dTheta1 = dTheta2 = 0
         else:

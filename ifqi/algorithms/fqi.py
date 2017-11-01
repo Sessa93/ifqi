@@ -67,7 +67,7 @@ class FQI(Algorithm):
 
         self._iteration += 1
 
-        return self._sa, y
+        return self._sa, self._estimator
 
     def fit(self, sast, r, **kwargs):
         """

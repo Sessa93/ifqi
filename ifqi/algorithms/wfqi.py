@@ -40,7 +40,7 @@ class WFQI(Algorithm):
         """
         if sast is not None:
             next_states_idx = self.state_dim + self.action_dim
-            print(next_states_idx)
+            #print(next_states_idx)
             self._sa = sast[:, :next_states_idx]
             self._snext = sast[:, next_states_idx:-1]
             self._absorbing = sast[:, -1]

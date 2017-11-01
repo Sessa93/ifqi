@@ -82,6 +82,7 @@ def _eval_and_render_vectorial(mdp, policy, horizon=None, gamma=None, metric='di
         H = mdp.horizon
     else:
         H = horizon
+    H = horizon
     assert H is not None
     assert gamma is not None
     if metric == 'average':
@@ -109,6 +110,7 @@ def _eval_and_render_vectorial(mdp, policy, horizon=None, gamma=None, metric='di
             mdp.render(mode='human')
         while t < H and not done:
             action = policy.draw_action(state, done, True)
+            #print(state)
             state, r, done, _ = mdp.step(action)
             ep_performance += df * r
             df *= gamma
@@ -130,9 +132,10 @@ def _parallel_eval(mdp, policy, horizon, gamma, metric, initial_states, n_episod
     if initial_states is not None:
         n_episodes = initial_states.shape[0] \
             if len(initial_states.shape) > 1 else 1
-        print(n_episodes)
+        #print(n_episodes)
 
     if hasattr(mdp, 'spec') and mdp.spec is not None:
+        print("CIAO")
         if n_episodes < n_episodes_per_job:
             how_many = n_episodes
             n_episodes_per_job = 1
@@ -330,7 +333,7 @@ def collect_episode(mdp, policy=None, horizon=None):
         horizon = mdp.horizon
     state = mdp.reset()
     # state_dim, action_dim, reward_dim = get_space_info(mdp)
-
+    #print(state)
     from ..utils.spaces.sampler import space_sampler
     sampler = space_sampler(mdp.action_space)
     while t < horizon and not done:
@@ -339,9 +342,9 @@ def collect_episode(mdp, policy=None, horizon=None):
         else:
             action = sampler()
         action = np.array([action]).ravel()
+        state = np.array(state)
         next_state, reward, done, _ = mdp.step(action)
-        new_el = state.tolist() + action.tolist() + [reward] + \
-                 next_state.tolist()
+        new_el = state.tolist() + action.tolist() + [reward] + next_state.tolist()
         if not done:
             if t < horizon - 1:
                 new_el += [0, 0]
@@ -349,9 +352,43 @@ def collect_episode(mdp, policy=None, horizon=None):
                 new_el += [0, 1]
         else:
             new_el += [1, 1]
-
+        #print(new_el)
         data.append(new_el)
         state = next_state
         t += 1
 
+    return np.array(data)
+
+def collect_samples(mdp, N, policy=None):
+    n = 0
+    data = list()
+    horizon = mdp.horizon
+    while n < N:
+        done = False
+        t = 0
+        state = mdp.reset()
+        from ..utils.spaces.sampler import space_sampler
+        sampler = space_sampler(mdp.action_space)
+
+        while t < horizon and not done and n < N:
+            if policy is not None:
+                action = policy.draw_action(state, done)
+            else:
+                action = sampler()
+            action = np.array([action]).ravel()
+            state = np.array(state)
+            next_state, reward, done, _ = mdp.step(action)
+            new_el = state.tolist() + action.tolist() + [reward] + next_state.tolist()
+            if not done:
+                if t < horizon - 1:
+                    new_el += [0, 0]
+                else:
+                    new_el += [0, 1]
+            else:
+                new_el += [1, 1]
+            #print(new_el)
+            data.append(new_el)
+            state = next_state
+            t += 1
+            n += 1
     return np.array(data)

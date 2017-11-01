@@ -124,7 +124,5 @@ class SimpleGrid(gym.Env):
     def calculateReward(self,state):
         #print(str(state[0])+","+str(state[1]))
         if self.goal[0] == state[0] and self.goal[1] == state[1]:
-            return 1
-        if state[0] <= 4:
-            return (-5+state[0])
-        return -(state[0]-4)
+            return np.random.normal(0,0.1,1)
+        return np.random.normal(-1,0.5,1)
