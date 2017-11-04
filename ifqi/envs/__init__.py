@@ -15,6 +15,7 @@ from .utils import get_space_info
 from .puddleworld import PuddleWorld
 from .puddleworld2 import PuddleWorld2
 from .puddleworld3 import PuddleWorld3
+from .damV2 import Dam
 
 #__all__ = ['Acrobot', 'Atari', 'Bicycle', 'CarOnHill', 'CartPole', 'GridWorldEnv', 'Gym', 'InvPendulum','LQG1D', 'Swimmer', 'SwingPendulum', 'SyntheticToyFS','SimpleGrid','PuddleWorld','PuddleWorldS']
-__all__ = ['PuddleWorld', 'PuddleWorld2','Acrobot', 'PuddleWorld3']
+__all__ = ['PuddleWorld', 'PuddleWorld2','Acrobot', 'PuddleWorld3', 'Dam']
