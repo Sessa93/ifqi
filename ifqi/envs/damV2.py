@@ -5,7 +5,7 @@ from gym.spaces import prng
 import ifqi.utils.spaces as fqispaces
 
 """
-Dam Control (discretized action space)
+Cyclostationary Dam Control (discretized action space)
 
 References
 ----------
@@ -13,7 +13,10 @@ References
     Luca Bascetta, Marcello Restelli,
     Policy gradient approaches for multi-objective sequential decision making
     2014 International Joint Conference on Neural Networks (IJCNN)
-
+    
+  - A. Castelletti, S. Galelli, M. Restelli, R. Soncini-Sessa
+    Tree-based reinforcement learning for optimal water reservoir operation
+    Water Resources Research 46.9 (2010)
 """
 
 from gym.envs.registration import register
@@ -31,76 +34,127 @@ class Dam(gym.Env):
         'video.frames_per_second': 30
     }
 
-    def __init__(self, demand = 50.0, flooding = 50.0, inflow_mean = 40.0, inflow_std = 10, alpha = 0.5, beta = 0.5):
+    def __init__(self, capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 1, inflow_std = 2.0, alpha = 0.5, beta = 0.5, penalty_on = False):
         
-        self.horizon = 100
-        self.gamma = 1.0
+        self.horizon = 360
+        self.gamma = 0.999
 
         self.DEMAND = demand  # Water demand -> At least DEMAND/day must be supplied or a cost is incurred
         self.FLOODING = flooding  # Flooding threshold -> No more than FLOODING can be stored or a cost is incurred
-        # NOTE: we do not allow to change the capacity since it would change the action space and the initial state distribution
-        self.CAPACITY = 100.0  # Release threshold (i.e., max capacity) -> At least max{S - CAPACITY, 0} must be released
-        self.INFLOW_MEAN = inflow_mean  # Random inflow (e.g. rain) mean
+        self.CAPACITY = capacity  # Maximum storage capacity -> At least max{S - CAPACITY, 0} must be released
+        self.INFLOW_MEAN = self._get_inflow_profile(inflow_profile)  # Random inflow (e.g. rain) mean for each day (360-dimensional vector)
         self.INFLOW_STD = inflow_std # Random inflow std
         
         assert alpha + beta == 1.0 # Check correctness
         self.ALPHA = alpha # Weight for the flooding cost
         self.BETA = beta # Weight for the demand cost
         
+        self.penalty_on = penalty_on # Whether to penalize illegal actions or not
+        
         # Gym attributes
         self.viewer = None
         
-        self.n_actions = 11
-        actions = [float(i) / (self.n_actions - 1) * self.CAPACITY for i in range(self.n_actions)]
+        actions = [0, 3, 5, 7, 10, 15, 20, 30]
         
         self.action_space = fqispaces.DiscreteValued(actions, decimals=0)   
         
-        self.observation_space = spaces.Box(low=0.0,
-                                            high=np.inf,
-                                            shape=(1,))
+        self.observation_space = spaces.Box(low=np.array([0,1]),
+                                            high=np.array([np.inf,360]))
 
         # Initialization
         self.seed()
         self.reset()
-
+    
+    def _get_inflow_profile(self,n):
+        
+        assert n >= 1 and n <=3
+        
+        if n == 1:
+            return self._get_inflow_1()
+        elif n == 2:
+            return self._get_inflow_2()
+        else:
+            return self._get_inflow_3()
+    
+    def _get_inflow_1(self):
+        
+        y = np.zeros(360)  
+        for x in range(360):
+            if x < 120:
+                y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
+            elif x < 240:
+                y[x] = np.sin(x * 3 * np.pi / 359) / 2 + 0.5
+            else:
+                y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
+        return y * 10
+    
+    def _get_inflow_2(self):
+        
+        y = np.zeros(360)  
+        for x in range(360):
+            if x < 120:
+                y[x] = np.sin(x * 3 * np.pi / 359) / 2 + 0.25
+            elif x < 240:
+                y[x] = np.sin(x * 3 * np.pi / 359 + np.pi) * 3 + 0.25
+            else:
+                y[x] = np.sin(x * 3 * np.pi / 359 + np.pi) / 4 + 0.25
+        return y * 10
+    
+    def _get_inflow_3(self):
+        
+        y = np.zeros(360)  
+        for x in range(360):
+            if x < 120:
+                y[x] = np.sin(x * 3 * np.pi / 359) * 3 + 0.25
+            elif x < 240:
+                y[x] = np.sin(x * 3 * np.pi / 359) / 4 + 0.25
+            else:
+                y[x] = np.sin(x * 3 * np.pi / 359) / 2 + 0.25
+        return y * 10
+        
     def step(self, action, render=False):
         
         # Get current state
         state = self.get_state()
+        storage = state[0]
+        day = state[1]
         
         # Bound the action
-        actionLB = max(state - self.CAPACITY, np.array([0.0]))
-        actionUB = state
+        actionLB = max(storage - self.CAPACITY, 0.0)
+        actionUB = storage
 
         # Penalty proportional to the violation
         bounded_action = min(max(action, actionLB), actionUB)
-        penalty = -abs(bounded_action - action)
+        penalty = -abs(bounded_action - action) * self.penalty_on
 
         # Transition dynamics
         action = bounded_action
-        dam_inflow = self.INFLOW_MEAN + np.random.randn() * self.INFLOW_STD
-        nextstate = max(state + dam_inflow - action, np.array([0.0]))
+        inflow = self.INFLOW_MEAN[int(day-1)] + np.random.randn() * self.INFLOW_STD
+        nextstorage = max(storage + inflow - action, 0.0)
 
         # Cost due to the excess level wrt the flooding threshold
-        reward_flooding = -max(nextstate - self.FLOODING, np.array([0.0])) + penalty
+        reward_flooding = -max(nextstorage - self.FLOODING, 0.0) / 6 + penalty
 
         # Deficit in the water supply wrt the water demand
-        reward_demand = -max(self.DEMAND - action, np.array([0.0])) + penalty
+        reward_demand = -max(self.DEMAND - action, 0.0) ** 2 + penalty
         
         # The final reward is a weighted average of the two costs
         reward = self.ALPHA * reward_flooding + self.BETA * reward_demand
 
-        self.state = nextstate
+        # Get next day
+        nextday = day + 1 if day < 360 else 1
 
-        return self.get_state(), np.asscalar(reward), False, {}
+        self.state = [nextstorage, nextday]
+
+        return self.get_state(), reward, False, {}
 
     def reset(self, state=None):
         
         if state is None:
-            self.state = [prng.np_random.uniform(0.0, self.CAPACITY * 1.2)]
+            init_days = np.array([1, 120, 240])
+            self.state = [prng.np_random.uniform(0.0, self.CAPACITY), init_days[prng.np_random.randint(low=0,high=3)]]
         else:
-            assert np.isscalar(state) and state > 0.
-            self.state = [np.asscalar(state)]
+            self.state = state
 
         return self.get_state()
 

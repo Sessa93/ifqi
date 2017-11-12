@@ -8,13 +8,13 @@ from ifqi.evaluation.utils import check_dataset, split_data_for_fqi
 from ifqi.algorithms.fqi import FQI
 from ifqi.models.regressor import Regressor
 
-mdp = envs.Dam(demand = 50.0, flooding = 50.0, inflow_mean = 40.0, inflow_std = 10, alpha = 0.4, beta = 0.6)
+mdp = envs.Dam()
 state_dim, action_dim, reward_dim = envs.get_space_info(mdp)
 assert reward_dim == 1
 
-regressor_params = {'n_estimators': 20,
+regressor_params = {'n_estimators': 50,
                     'criterion': 'mse',
-                    'min_samples_split': 5,
+                    'min_samples_split': 20,
                     'min_samples_leaf': 2,
                     'input_scaled': False,
                     'output_scaled': False}
@@ -42,11 +42,11 @@ fit_params = {}
 
 fqi.partial_fit(sast, r, **fit_params)
 
-iterations = 20
+iterations = 60
 iteration_values = []
 for i in range(iterations - 1):
     fqi.partial_fit(None, None, **fit_params)
-    values = evaluation.evaluate_policy(mdp, fqi, n_episodes = 20)
+    values = evaluation.evaluate_policy(mdp, fqi, n_episodes = 1, initial_states = np.array([[100.0,1]]))
     print(values)
     iteration_values.append(values[0])
 
