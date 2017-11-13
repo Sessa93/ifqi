@@ -9,12 +9,12 @@ import json
 
 perf_file = open('perf_dam.txt', 'w')
 
-mdp = envs.Dam(demand = 50.0, flooding = 50.0, inflow_mean = 40.0, inflow_std = 10, alpha = 0.4, beta = 0.6)
+mdp = envs.Dam()
 state_dim, action_dim, reward_dim = envs.get_space_info(mdp)
 
-regressor_params = {'n_estimators': 20,
+regressor_params = {'n_estimators': 50,
                     'criterion': 'mse',
-                    'min_samples_split': 5,
+                    'min_samples_split': 20,
                     'min_samples_leaf': 2,
                     'input_scaled': False,
                     'output_scaled': False}
@@ -22,7 +22,7 @@ discrete_actions = mdp.action_space.values
 
 regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 
-for n_samples in [100,200,500,1000,2000,3000,4000,5000,10000]:
+for n_samples in [1,2,5,10,20,30,40,50,100]:
     
     print("Starting N = " + str(n_samples))
     
@@ -30,7 +30,7 @@ for n_samples in [100,200,500,1000,2000,3000,4000,5000,10000]:
     
     for e in range(30):
 
-        dataset = evaluation.collect_episodes(mdp, n_episodes=int(n_samples/mdp.horizon))
+        dataset = evaluation.collect_episodes(mdp, n_episodes=n_samples)
         check_dataset(dataset, state_dim, action_dim, reward_dim)
 
         sast, r = split_data_for_fqi(dataset, state_dim, action_dim, reward_dim)
@@ -48,12 +48,12 @@ for n_samples in [100,200,500,1000,2000,3000,4000,5000,10000]:
         
         fqi.partial_fit(sast, r, **fit_params)
 
-        iterations = 20
+        iterations = 60
         best_j = -float("Inf")
         best_policy = fqi
         for i in range(iterations - 1):
             fqi.partial_fit(None, None, **fit_params)
-            values = evaluation.evaluate_policy(mdp, fqi, n_episodes = 20)
+            values = evaluation.evaluate_policy(mdp, fqi, n_episodes = 1, initial_states = np.array([[100.0,1]]))
             if values[0] > best_j:
                 best_policy = fqi
                 best_j = values[0]
