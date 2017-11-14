@@ -11,6 +11,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 import pickle
 import json
+import math
 
 def save_object(obj, filename):
     with open(filename, 'wb') as output:
@@ -21,7 +22,9 @@ def load_object(filename):
         return pickle.load(input)
 
 
-perf_file = open('perf_dam_transfer_50.txt', 'w')
+n_source = 30
+
+perf_file = open('perf_dam_transfer_' + str(n_source) + '.txt', 'w')
 
 # Tasks definition
 source_mdp_1 = envs.Dam(capacity = 450.0, demand = 9.0, flooding = 250.0, inflow_profile = 2, inflow_std = 1.9, alpha = 0.4, beta = 0.6)
@@ -44,14 +47,13 @@ discrete_actions = source_mdp_1.action_space.values
 # ExtraTrees
 regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 
-n_source = 50
 for n_target in [1,5,10,20,30,40,50,100]:
     
     print("Starting N = " + str(n_target))
     
     evals = [n_target]
     
-    for e in range(20):
+    for e in range(10):
         ws = []
         wr = []
         err = 0
@@ -63,14 +65,17 @@ for n_target in [1,5,10,20,30,40,50,100]:
 
         dataset = []
         if n_source > 0:
-            X = sast[:,0:3]
+            
+            n_gp = min(n_target,n_source)
+            
+            X = sast[0:n_gp,0:3]
 
-            y = r
+            y = r[0:n_gp]
             gp_target_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
             gp_target_rw.fit(X,y)
             print("Target task reward GP fitted!")
             
-            y = sast[:,3]
+            y = sast[0:n_gp,3]
             gp_target_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
             gp_target_st.fit(X,y)
             print("Target task transition GP fitted!")
