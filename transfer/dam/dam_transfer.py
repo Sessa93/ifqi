@@ -142,8 +142,8 @@ for n_target in [1,5,10,20,30,40,50,100]:
                 del raw_dataset
                 k += 1
 
-        del gp_target_rw
-        del gp_target_st
+            del gp_target_rw
+            del gp_target_st
         
         print("Total Source Samples: "+str(len(dataset)))
         for (s1,d1,a,r,s2,d2,f1,f2) in target_samples:
@@ -181,7 +181,7 @@ for n_target in [1,5,10,20,30,40,50,100]:
         best_policy = fqi
         for i in range(iterations - 1):
             fqi.partial_fit(None, Q1,**fit_params)
-            values = evaluation.evaluate_policy(mdp, fqi, n_episodes = 1, initial_states = np.array([[100.0,1]]))
+            values = evaluation.evaluate_policy(target_mdp, fqi, n_episodes = 1, initial_states = np.array([[100.0,1]]))
             if values[0] > best_j:
                 best_policy = fqi
                 best_j = values[0]
