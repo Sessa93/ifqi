@@ -85,21 +85,22 @@ for n_target in [1,5,10,20,30,40,50,100]:
 
                 X = sast[:,0:3]
 
+                mu_gp_t_rw, std_gp_t_rw = gp_target_rw.predict(X,return_std=True)
+                mu_gp_t_st, std_gp_t_st = gp_target_st.predict(X,return_std=True)
+                
                 y = r
                 gp_source_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
                 gp_source_rw.fit(X,y)
                 print("Source task "+str(k)+" reward GP fitted!")
+                mu_gp_s_rw, std_gp_s_rw = gp_source_rw.predict(X,return_std=True)
+                del gp_source_rw
                 
                 y = sast[:,3]
                 gp_source_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
                 gp_source_st.fit(X,y)
                 print("Source task "+str(k)+" transition GP fitted!")
-
-                mu_gp_t_rw, std_gp_t_rw = gp_target_rw.predict(X,return_std=True)
-                mu_gp_s_rw, std_gp_s_rw = gp_source_rw.predict(X,return_std=True)
-                
-                mu_gp_t_st, std_gp_t_st = gp_target_st.predict(X,return_std=True)
                 mu_gp_s_st, std_gp_s_st = gp_source_st.predict(X,return_std=True)
+                del gp_source_st
 
                 raw_dataset = []
                 for i in range(len(source_samples)):
@@ -136,6 +137,9 @@ for n_target in [1,5,10,20,30,40,50,100]:
                 del raw_dataset
                 k += 1
 
+        del gp_target_rw
+        del gp_target_st
+        
         print("Total Source Samples: "+str(len(dataset)))
         for (s1,d1,a,r,s2,d2,f1,f2) in target_samples:
             dataset.append([s1,d1,a,r,s2,d2,f1,f2])
