@@ -22,13 +22,13 @@ discrete_actions = mdp.action_space.values
 
 regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 
-for n_samples in [1,2,5,10,20,30,40,50,100]:
+for n_samples in [1,5,10,20,30,40,50,100,300]:
     
     print("Starting N = " + str(n_samples))
     
     evals = [n_samples]
     
-    for e in range(30):
+    for e in range(20):
 
         dataset = evaluation.collect_episodes(mdp, n_episodes=n_samples)
         check_dataset(dataset, state_dim, action_dim, reward_dim)
