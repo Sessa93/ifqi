@@ -84,8 +84,8 @@ for n_target in [1,5,10,20,30,40,50,100]:
 
             for mdp in source_mdps:
 
-                #best_policy_source = load_object('source_policy_dam'+str(k)+'.pkl')
-                source_samples = evaluation.collect_episodes(mdp, n_episodes=n_source)
+                best_policy_source = load_object('source_policy_dam'+str(k)+'.pkl')
+                source_samples = evaluation.collect_episodes(mdp, best_policy_source, n_episodes=n_source)
                 sast, r = split_data_for_fqi(source_samples, state_dim, action_dim, reward_dim)
 
                 X = sast[:,0:3]
