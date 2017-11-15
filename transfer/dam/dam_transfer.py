@@ -32,7 +32,7 @@ source_mdp_2 = envs.Dam(capacity = 600.0, demand = 10.0, flooding = 200.0, inflo
 source_mdp_3 = envs.Dam(capacity = 550.0, demand = 8.0, flooding = 250.0, inflow_profile = 4, inflow_std = 4.0, alpha = 0.7, beta = 0.3)
 target_mdp = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 1, inflow_std = 3.8, alpha = 0.3, beta = 0.7)
 
-source_mdps = [source_mdp_1, source_mdp_2]
+source_mdps = [source_mdp_1, source_mdp_2, source_mdp_3]
 
 state_dim, action_dim, reward_dim = envs.get_space_info(source_mdp_1)
 assert reward_dim == 1
@@ -136,7 +136,7 @@ for n_target in [1,5,10,20,30,40,50,100]:
                 
                 # Weight filtering
                 for (s1,d1,a,r,s2,d2,f1,f2,w_rw,w_st) in raw_dataset:
-                    if w_rw < 10 and w_st < 10:
+                    if w_rw < 1000 and w_st < 1000:
                         dataset.append([s1,d1,a,r,s2,d2,f1,f2])
                         wr.append(w_rw)
                         ws.append(w_st)
@@ -156,8 +156,15 @@ for n_target in [1,5,10,20,30,40,50,100]:
         print("Err: "+str(err))
         wr = np.array(wr)
         ws = np.array(ws)
-        print("Mean wr: "+str(np.mean(wr)))
-        print("Mean ws: "+str(np.mean(ws)))
+        N = np.shape(wr)[0]
+        wr_mean = np.mean(wr)
+        ws_mean = np.mean(ws)
+        wr_mean2 = np.mean(np.multiply(wr,wr))
+        ws_mean2 = np.mean(np.multiply(ws,ws))
+        print("Mean wr: "+str(wr_mean))
+        print("Mean ws: "+str(ws_mean))
+        print("Eff wr: "+str(N * wr_mean ** 2 / wr_mean2))
+        print("Eff ws: "+str(N * ws_mean ** 2 / ws_mean2))     
         
         sast, r = split_data_for_fqi(dataset, state_dim, action_dim, reward_dim)
 

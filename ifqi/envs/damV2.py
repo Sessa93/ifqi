@@ -72,7 +72,7 @@ class Dam(gym.Env):
             return self._get_inflow_1()
         elif n == 2:
             return self._get_inflow_2()
-        elif n == 3
+        elif n == 3:
             return self._get_inflow_3()
         else:
             return self._get_inflow_4()
