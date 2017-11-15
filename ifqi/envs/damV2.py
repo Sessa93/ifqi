@@ -1,7 +1,6 @@
 import gym
 import numpy as np
 from gym import spaces
-from gym.spaces import prng
 import ifqi.utils.spaces as fqispaces
 
 """
@@ -67,14 +66,16 @@ class Dam(gym.Env):
     
     def _get_inflow_profile(self,n):
         
-        assert n >= 1 and n <=3
+        assert n >= 1 and n <=4
         
         if n == 1:
             return self._get_inflow_1()
         elif n == 2:
             return self._get_inflow_2()
-        else:
+        elif n == 3
             return self._get_inflow_3()
+        else:
+            return self._get_inflow_4()
     
     def _get_inflow_1(self):
         
@@ -86,7 +87,7 @@ class Dam(gym.Env):
                 y[x] = np.sin(x * 3 * np.pi / 359) / 2 + 0.5
             else:
                 y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
-        return y * 10
+        return y * 8 + 2
     
     def _get_inflow_2(self):
         
@@ -98,7 +99,7 @@ class Dam(gym.Env):
                 y[x] = np.sin(x * 3 * np.pi / 359 + np.pi) * 3 + 0.25
             else:
                 y[x] = np.sin(x * 3 * np.pi / 359 + np.pi) / 4 + 0.25
-        return y * 10
+        return y * 8 + 2
     
     def _get_inflow_3(self):
         
@@ -110,7 +111,19 @@ class Dam(gym.Env):
                 y[x] = np.sin(x * 3 * np.pi / 359) / 4 + 0.25
             else:
                 y[x] = np.sin(x * 3 * np.pi / 359) / 2 + 0.25
-        return y * 10
+        return y * 8 + 2
+    
+    def _get_inflow_4(self):
+        
+        y = np.zeros(360)  
+        for x in range(360):
+            if x < 120:
+                y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
+            elif x < 240:
+                y[x] = np.sin(x * 3 * np.pi / 359) / 4 + 0.5
+            else:
+                y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
+        return y * 7 + 2
         
     def step(self, action, render=False):
         
@@ -133,7 +146,7 @@ class Dam(gym.Env):
         nextstorage = max(storage + inflow - action, 0.0)
 
         # Cost due to the excess level wrt the flooding threshold
-        reward_flooding = -max(nextstorage - self.FLOODING, 0.0) / 6 + penalty
+        reward_flooding = -max(storage - self.FLOODING, 0.0) / 6 + penalty
 
         # Deficit in the water supply wrt the water demand
         reward_demand = -max(self.DEMAND - action, 0.0) ** 2 + penalty
@@ -152,7 +165,7 @@ class Dam(gym.Env):
         
         if state is None:
             init_days = np.array([1, 120, 240])
-            self.state = [prng.np_random.uniform(0.0, self.CAPACITY), init_days[prng.np_random.randint(low=0,high=3)]]
+            self.state = [np.random.uniform(0.0, self.CAPACITY), init_days[np.random.randint(low=0,high=3)]]
         else:
             self.state = state
 
