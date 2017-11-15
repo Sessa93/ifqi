@@ -6,6 +6,15 @@ from ifqi.evaluation.utils import check_dataset, split_data_for_fqi
 from ifqi.algorithms.fqi import FQI
 from ifqi.models.regressor import Regressor
 import json
+import pickle
+
+def save_object(obj, filename):
+    with open(filename, 'wb') as output:
+        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
+def load_object(filename):
+    with open(filename, 'rb') as input:
+        return pickle.load(input)
 
 perf_file = open('perf_dam.txt', 'w')
 
@@ -50,12 +59,11 @@ for n_samples in [1,5,10,20,30,40,50,100,300]:
 
         iterations = 60
         best_j = -float("Inf")
-        best_policy = fqi
         for i in range(iterations - 1):
             fqi.partial_fit(None, None, **fit_params)
             values = evaluation.evaluate_policy(mdp, fqi, n_episodes = 1, initial_states = np.array([[100.0,1]]))
             if values[0] > best_j:
-                best_policy = fqi
+                save_object(fqi,'source_policy_dam.pkl')
                 best_j = values[0]
         evals.append(best_j)
         print(str(best_j))
