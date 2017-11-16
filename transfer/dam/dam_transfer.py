@@ -135,12 +135,22 @@ for n_target in [1,5,10,20,30,40,50,100]:
                         err += 1
                 
                 # Weight filtering
+                wr_filtered = []
+                ws_filtered = []
                 for (s1,d1,a,r,s2,d2,f1,f2,w_rw,w_st) in raw_dataset:
                     if w_rw < 1000 and w_st < 1000:
                         dataset.append([s1,d1,a,r,s2,d2,f1,f2])
-                        wr.append(w_rw)
-                        ws.append(w_st)
+                        wr_filtered.append(w_rw)
+                        ws_filtered.append(w_st)
                 del raw_dataset
+                # Normalize
+                wr_filtered = np.array(wr_filtered)
+                ws_filtered = np.array(ws_filtered)
+                wr_filtered = wr_filtered / np.sum(wr_filtered)
+                ws_filtered = ws_filtered  / np.sum(ws_filtered)
+                wr.extend(wr_filtered.tolist())
+                ws.extend(ws_filtered.tolist())
+                
                 k += 1
 
             del gp_target_rw
@@ -156,6 +166,9 @@ for n_target in [1,5,10,20,30,40,50,100]:
         print("Err: "+str(err))
         wr = np.array(wr)
         ws = np.array(ws)
+        wr = wr / np.sum(wr)
+        ws = ws / np.sum(ws)
+        
         N = np.shape(wr)[0]
         wr_mean = np.mean(wr)
         ws_mean = np.mean(ws)
