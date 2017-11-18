@@ -112,44 +112,36 @@ for n_target in [1,5,10,20,30,40,50,100]:
                 for i in range(len(source_samples)):
                     (s1,d1,a,r,s2,d2,f1,f2) = source_samples[i] # storage,day,action,reward,nextstorage,nextday,end,terminal
                     
-                    sigma = 0.1
+                    sigma_rw = 0.1
+                    sigma_st = 20.0
                     
-                    var_num_rw = sigma + math.pow(std_gp_t_rw[i],2)
-                    var_denom_rw = sigma - math.pow(std_gp_s_rw[i],2)
+                    var_num_rw = sigma_rw + math.pow(std_gp_t_rw[i],2)
+                    var_denom_rw = sigma_rw - math.pow(std_gp_s_rw[i],2)
                     
-                    var_num_st = sigma + math.pow(std_gp_t_st[i],2)
-                    var_denom_st = sigma - math.pow(std_gp_s_st[i],2)
+                    var_num_st = sigma_st + math.pow(std_gp_t_st[i],2)
+                    var_denom_st = sigma_st - math.pow(std_gp_s_st[i],2)
                     
                     if var_denom_rw > 0 and var_denom_st > 0:
                         
                         num_rw = stats.norm.pdf(r, mu_gp_t_rw[i], math.sqrt(var_num_rw))
                         denom_rw = stats.norm.pdf(r, mu_gp_s_rw[i], math.sqrt(var_denom_rw))
-                        w_rw = (num_rw/denom_rw)*(sigma/var_denom_rw)
+                        w_rw = (num_rw/denom_rw)*(sigma_rw/var_denom_rw)
                         
                         num_st = stats.norm.pdf(s2, mu_gp_t_st[i], math.sqrt(var_num_st))
                         denom_st = stats.norm.pdf(s2, mu_gp_s_st[i], math.sqrt(var_denom_st))
-                        w_st = (num_st/denom_st)*(sigma/var_denom_st)
+                        w_st = (num_st/denom_st)*(sigma_st/var_denom_st)
                     
                         raw_dataset.append([s1,d1,a,r,s2,d2,f1,f2,w_rw,w_st])
                     else:
                         err += 1
                 
                 # Weight filtering
-                wr_filtered = []
-                ws_filtered = []
                 for (s1,d1,a,r,s2,d2,f1,f2,w_rw,w_st) in raw_dataset:
                     if w_rw < 1000 and w_st < 1000:
                         dataset.append([s1,d1,a,r,s2,d2,f1,f2])
-                        wr_filtered.append(w_rw)
-                        ws_filtered.append(w_st)
+                        wr.append(w_rw)
+                        ws.append(w_st)
                 del raw_dataset
-                # Normalize
-                wr_filtered = np.array(wr_filtered)
-                ws_filtered = np.array(ws_filtered)
-                wr_filtered = wr_filtered / np.sum(wr_filtered)
-                ws_filtered = ws_filtered  / np.sum(ws_filtered)
-                wr.extend(wr_filtered.tolist())
-                ws.extend(ws_filtered.tolist())
                 
                 k += 1
 
@@ -166,8 +158,6 @@ for n_target in [1,5,10,20,30,40,50,100]:
         print("Err: "+str(err))
         wr = np.array(wr)
         ws = np.array(ws)
-        wr = wr / np.sum(wr)
-        ws = ws / np.sum(ws)
         
         N = np.shape(wr)[0]
         wr_mean = np.mean(wr)
