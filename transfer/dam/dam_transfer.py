@@ -59,18 +59,19 @@ discrete_actions = source_mdp_1.action_space.values
 # ExtraTrees
 regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 
-# List containing the source reward predictions
-source_predictions_rw = []
-# List containing the source transition predictions
-source_predictions_st = []
-# List containing the source state-action couples
-source_X = []
-# List containing the source samples
-source_samples_list = []
-
 if n_source > 0:
     
     print("Initializing sources")
+    
+    # List containing the source reward predictions
+    source_predictions_rw = []
+    # List containing the source transition predictions
+    source_predictions_st = []
+    # List containing the source state-action couples
+    source_X = []
+    # List containing the source samples
+    source_samples_list = []
+    
     # Effective number of samples used to fit the GPs
     n_gp = min(n_source,max_gp)
     for k in range(len(source_mdps)):
@@ -134,21 +135,23 @@ for n_target in [1,5,10,20,30,40,50,100]:
         # Effective number of samples used to fit the target GP
         n_gp = min(n_target,max_gp)
         
-        X_train = sast[0:n_gp*360,0:3]
+        X_train = sast[(n_target*360-n_gp*360):n_target*360,0:3]
 
         print("Fitting target reward GP")
-        y = r[0:n_gp*360]
+        y = r[(n_target*360-n_gp*360):n_target*360]
         gp_target_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
         gp_target_rw.fit(X_train,y)
         print("Target reward GP fitted")
         
         print("Fitting target transition GP")
-        y = sast[0:n_gp*360,3]
+        y = sast[(n_target*360-n_gp*360):n_target*360,3]
         gp_target_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
         gp_target_st.fit(X_train,y)
         print("Target transition GP fitted")
         
         for k in range(len(source_mdps)):
+            
+            mdp = source_mdps[k]
             
             print("Predicting source " + str(k))
             X_predict = source_X[k]
@@ -222,6 +225,7 @@ for n_target in [1,5,10,20,30,40,50,100]:
     print("Eff wr: "+str(N * wr_mean ** 2 / wr_mean2))
     print("Eff ws: "+str(N * ws_mean ** 2 / ws_mean2))
     
+    # Run WFQI n_runs times
     for e in range(n_runs):
         
         sast, r = split_data_for_fqi(dataset, state_dim, action_dim, reward_dim)
@@ -237,11 +241,14 @@ for n_target in [1,5,10,20,30,40,50,100]:
                   horizon=fqi_iterations,
                   verbose=False)
 
+        # Fit reward with weights wr
         sa,est = fqi.partial_fit(sast, r,**fit_params)
+        # Predict using fitted reward
         Q1 = est.predict(sa)
 
         fit_params = {'sample_weight': ws}
         
+        # Run FQI with weights ws
         iterations = 60
         best_j = -float("Inf")
         for i in range(iterations - 1):
