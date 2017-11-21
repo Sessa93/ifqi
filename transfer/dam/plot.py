@@ -27,11 +27,15 @@ def read_perf(filename):
     return x,y_mean,y_std
 
 x,y_mean1,y_std1 = read_perf("perf_dam_transfer_0.txt")
-x,y_mean2,y_std2 = read_perf("perf_dam_transfer_30.txt")
+x,y_mean2,y_std2 = read_perf("perf_dam_transfer_20_1.txt")
+x,y_mean3,y_std3 = read_perf("perf_dam_transfer_20_2.txt")
+x,y_mean4,y_std4 = read_perf("perf_dam_transfer_20_3.txt")
 
 fig, ax = plt.subplots()
 ax.errorbar(x, y_mean1, yerr=y_std1, fmt='ro-', label='No Transfer')
-ax.errorbar(x, y_mean2, yerr=y_std2, fmt='bo-', label='30 Years Source')
+ax.errorbar(x, y_mean2, yerr=y_std2, fmt='bo-', label='30 Years Source (1)')
+ax.errorbar(x, y_mean3, yerr=y_std3, fmt='go-', label='30 Years Source (2)')
+ax.errorbar(x, y_mean4, yerr=y_std4, fmt='yo-', label='30 Years Source (3)')
 #x.errorbar(x, y3, yerr=y_err3, fmt='go-', label='1000 Source samp.')
 #ax.errorbar(x, y4, yerr=y_err4, fmt='co-', label='2000 Source samp.')
 plt.title("Dam Control")

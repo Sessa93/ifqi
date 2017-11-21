@@ -23,6 +23,7 @@ def load_object(filename):
 
 
 n_source = 30
+max_gp = 20
 
 perf_file = open('perf_dam_transfer_' + str(n_source) + '.txt', 'w')
 
@@ -67,45 +68,48 @@ for n_target in [1,5,10,20,30,40,50,100]:
         dataset = []
         if n_source > 0:
             
-            n_gp = min(n_target,n_source)
+            n_gp = min(n_target,max_gp)
             
-            X = sast[0:n_gp,0:3]
+            X_train = sast[0:n_gp*360,0:3]
 
-            y = r[0:n_gp]
+            y = r[0:n_gp*360]
             gp_target_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
-            gp_target_rw.fit(X,y)
+            gp_target_rw.fit(X_train,y)
             print("Target task reward GP fitted!")
             
-            y = sast[0:n_gp,3]
+            y = sast[0:n_gp*360,3]
             gp_target_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
-            gp_target_st.fit(X,y)
+            gp_target_st.fit(X_train,y)
             print("Target task transition GP fitted!")
             
             k = 1
 
             for mdp in source_mdps:
 
+                n_gp = min(n_source,max_gp)
+                
                 best_policy_source = load_object('source_policy_dam'+str(k)+'.pkl')
                 source_samples = evaluation.collect_episodes(mdp, best_policy_source, n_episodes=n_source)
                 sast, r = split_data_for_fqi(source_samples, state_dim, action_dim, reward_dim)
 
-                X = sast[:,0:3]
+                X_predict = sast[:,0:3]
+                X_train = sast[0:n_gp*360,0:3]
 
-                mu_gp_t_rw, std_gp_t_rw = gp_target_rw.predict(X,return_std=True)
-                mu_gp_t_st, std_gp_t_st = gp_target_st.predict(X,return_std=True)
+                mu_gp_t_rw, std_gp_t_rw = gp_target_rw.predict(X_predict,return_std=True)
+                mu_gp_t_st, std_gp_t_st = gp_target_st.predict(X_predict,return_std=True)
                 
-                y = r
+                y = r[0:n_gp*360]
                 gp_source_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
-                gp_source_rw.fit(X,y)
+                gp_source_rw.fit(X_train,y)
                 print("Source task "+str(k)+" reward GP fitted!")
-                mu_gp_s_rw, std_gp_s_rw = gp_source_rw.predict(X,return_std=True)
+                mu_gp_s_rw, std_gp_s_rw = gp_source_rw.predict(X_predict,return_std=True)
                 del gp_source_rw
                 
-                y = sast[:,3]
+                y = sast[0:n_gp*360,3]
                 gp_source_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
-                gp_source_st.fit(X,y)
+                gp_source_st.fit(X_train,y)
                 print("Source task "+str(k)+" transition GP fitted!")
-                mu_gp_s_st, std_gp_s_st = gp_source_st.predict(X,return_std=True)
+                mu_gp_s_st, std_gp_s_st = gp_source_st.predict(X_predict,return_std=True)
                 del gp_source_st
 
                 raw_dataset = []
