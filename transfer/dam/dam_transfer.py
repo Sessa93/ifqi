@@ -61,8 +61,6 @@ regressor = Regressor(ExtraTreesRegressor, **regressor_params)
 
 if n_source > 0:
     
-    print("Initializing sources")
-    
     # List containing the source reward predictions
     source_predictions_rw = []
     # List containing the source transition predictions
@@ -80,11 +78,10 @@ if n_source > 0:
         mdp = source_mdps[k]
         
         print("Collecting episodes for source " + str(k))
-        source_policy = load_object('source_policy_dam'+str(k)+'.pkl')
+        source_policy = load_object('source_policy_dam_'+str(k+1)+'.pkl')
         source_samples = evaluation.collect_episodes(mdp, source_policy, n_episodes=n_source)
         source_samples_list.append(source_samples)
         sast, r = split_data_for_fqi(source_samples, state_dim, action_dim, reward_dim)
-        print("Episodes collected")
         
         X_predict = sast[:,0:3]
         source_X.append(X_predict)
@@ -94,25 +91,20 @@ if n_source > 0:
         y = r[0:n_gp*360]
         gp_source_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
         gp_source_rw.fit(X_train,y)
-        print("Reward GP fitted")
         print("Predicting reward for source " + str(k))
         mu_gp_s_rw, std_gp_s_rw = gp_source_rw.predict(X_predict,return_std=True)
         source_predictions_rw.append((mu_gp_s_rw, std_gp_s_rw))
-        print("Reward predicted")
         del gp_source_rw
         
         print("Fitting transition GP for source " + str(k))
         y = sast[0:n_gp*360,3]
         gp_source_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
         gp_source_st.fit(X_train,y)
-        print("Transition GP fitted")
         print("Predicting transitions for source " + str(k))
         mu_gp_s_st, std_gp_s_st = gp_source_st.predict(X_predict,return_std=True)
         source_predictions_st.append((mu_gp_s_st, std_gp_s_st))
-        print("Transitions predicted")
         del gp_source_st
 
-print("Starting target task learning")
 for n_target in [1,5,10,20,30,40,50,100]:
     
     print("Starting N = " + str(n_target))
@@ -123,7 +115,6 @@ for n_target in [1,5,10,20,30,40,50,100]:
     print("Collecting target episodes")
     target_samples = evaluation.collect_episodes(target_mdp,n_episodes=n_target)
     sast, r = split_data_for_fqi(target_samples, state_dim, action_dim, reward_dim)
-    print("Episodes collected")
     
     # Initialize dataset and weights
     dataset = []
@@ -141,13 +132,11 @@ for n_target in [1,5,10,20,30,40,50,100]:
         y = r[(n_target*360-n_gp*360):n_target*360]
         gp_target_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
         gp_target_rw.fit(X_train,y)
-        print("Target reward GP fitted")
         
         print("Fitting target transition GP")
         y = sast[(n_target*360-n_gp*360):n_target*360,3]
         gp_target_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
         gp_target_st.fit(X_train,y)
-        print("Target transition GP fitted")
         
         for k in range(len(source_mdps)):
             
@@ -157,7 +146,6 @@ for n_target in [1,5,10,20,30,40,50,100]:
             X_predict = source_X[k]
             mu_gp_t_rw, std_gp_t_rw = gp_target_rw.predict(X_predict,return_std=True)
             mu_gp_t_st, std_gp_t_st = gp_target_st.predict(X_predict,return_std=True)
-            print("Source predicted")
             
             # Get source predictions
             mu_gp_s_rw, std_gp_s_rw = source_predictions_rw[k]
@@ -195,13 +183,9 @@ for n_target in [1,5,10,20,30,40,50,100]:
                         ws.append(w_st)
                 else:
                     print("WARNING: discarding sample due to imprecise GP")
-                    
-            print("Weights computed")
             
         del gp_target_rw
         del gp_target_st
-        print("Source Dataset built")
-    
     
     print("Total source samples: " + str(len(dataset)))
     print("Total target samples: " + str(len(target_samples)))
