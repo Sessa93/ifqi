@@ -38,10 +38,10 @@ max_weight = 1000
 perf_file = open('perf_dam_transfer_' + str(n_source) + '.txt', 'w')
 
 # Tasks definition
-source_mdp_1 = envs.Dam(capacity = 450.0, demand = 11.0, flooding = 250.0, inflow_profile = 2, inflow_std = 4.5, alpha = 0.4, beta = 0.6)
-source_mdp_2 = envs.Dam(capacity = 600.0, demand = 10.0, flooding = 200.0, inflow_profile = 3, inflow_std = 3.9, alpha = 0.65, beta = 0.35)
-source_mdp_3 = envs.Dam(capacity = 550.0, demand = 8.0, flooding = 250.0, inflow_profile = 4, inflow_std = 4.0, alpha = 0.7, beta = 0.3)
-target_mdp = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 1, inflow_std = 3.8, alpha = 0.3, beta = 0.7)
+source_mdp_1 = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 2, inflow_std = 4.0, alpha = 0.8, beta = 0.2)
+source_mdp_2 = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 3, inflow_std = 4.0, alpha = 0.35, beta = 0.65)
+source_mdp_3 = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 4, inflow_std = 4.0, alpha = 0.7, beta = 0.3)
+target_mdp = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 1, inflow_std = 4.0, alpha = 0.3, beta = 0.7)
 
 source_mdps = [source_mdp_1, source_mdp_2, source_mdp_3]
 

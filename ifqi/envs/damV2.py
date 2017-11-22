@@ -120,7 +120,7 @@ class Dam(gym.Env):
             if x < 120:
                 y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
             elif x < 240:
-                y[x] = np.sin(x * 3 * np.pi / 359) / 4 + 0.5
+                y[x] = np.sin(x * 3 * np.pi / 359) / 2.5 + 0.5
             else:
                 y[x] = np.sin(x * 3 * np.pi / 359) + 0.5
         return y * 7 + 2
