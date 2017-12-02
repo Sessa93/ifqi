@@ -173,3 +173,27 @@ class Dam(gym.Env):
 
     def get_state(self):
         return np.array(self.state)
+    
+    def get_reward(self,storage,action):
+        
+        # Bound the action
+        actionLB = max(storage - self.CAPACITY, 0.0)
+        actionUB = storage
+
+        # Penalty proportional to the violation
+        bounded_action = min(max(action, actionLB), actionUB)
+        penalty = -abs(bounded_action - action) * self.penalty_on
+
+        # Transition dynamics
+        action = bounded_action
+
+        # Cost due to the excess level wrt the flooding threshold
+        reward_flooding = -max(storage - self.FLOODING, 0.0) / 6 + penalty
+
+        # Deficit in the water supply wrt the water demand
+        reward_demand = -max(self.DEMAND - action, 0.0) ** 2 + penalty
+        
+        # The final reward is a weighted average of the two costs
+        reward = self.ALPHA * reward_flooding + self.BETA * reward_demand
+        
+        return reward

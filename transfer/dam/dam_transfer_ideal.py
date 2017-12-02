@@ -24,9 +24,9 @@ n_source = 30
 # Number of repetitions of each run
 n_runs = 10
 # Variance of the reward model
-var_rw = 0.3
+var_rw = 0.5
 # Variance of the transition model
-var_st = 16.0
+var_st = 20.0
 # Weight discard threshold
 max_weight = 1000
 
