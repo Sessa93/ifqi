@@ -113,8 +113,13 @@ for n_target in [1,5,10,20,30,40,50,100]:
     
     # Generate target samples
     print("Collecting target episodes")
-    target_samples = evaluation.collect_episodes(target_mdp,n_episodes=n_target)
+    if n_target == 1:
+        target_samples = evaluation.collect_episodes(target_mdp,n_episodes=n_target)
+    else:
+        target_samples = np.concatenate((target_samples,evaluation.collect_episodes(target_mdp,n_episodes=(n_target - n_target_old))))
+
     sast, r = split_data_for_fqi(target_samples, state_dim, action_dim, reward_dim)
+    n_target_old = n_target
     
     # Initialize dataset and weights
     dataset = []
