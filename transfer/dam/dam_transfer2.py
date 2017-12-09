@@ -8,7 +8,7 @@ from ifqi.models.regressor import Regressor
 import json
 import scipy.stats as stats
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from sklearn.gaussian_process.kernels import (RBF, Matern, RationalQuadratic)
 import pickle
 import json
 import math
@@ -33,6 +33,10 @@ var_rw = 0.5
 var_st = 20.0
 # Weight discard threshold
 max_weight = 1000
+
+# Kernels
+kernel_rw = 20.0 * Matern(length_scale=10.0, length_scale_bounds=(1e-1, 100.0), nu=1.5)
+kernel_st = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.01,1000.0)) + 1.0 * RationalQuadratic(length_scale=1.0, alpha=0.1)
 
 # File to save results
 perf_file = open('perf_dam_transfer_' + str(n_source) + '.txt', 'w')
@@ -71,40 +75,16 @@ if n_source > 0:
     # List containing the source samples
     source_samples_list = []
     
-    # Effective number of samples used to fit the GPs
-    n_gp = min(n_source,max_gp)
     for k in range(len(source_mdps)):
         
-        # k-th source mdp
-        mdp = source_mdps[k]
-        
-        print("Collecting episodes for source " + str(k))
-        source_policy = load_object('source_policy_dam_'+str(k+1)+'.pkl')
-        source_samples = evaluation.collect_episodes(mdp, source_policy, n_episodes=n_source)
+        data = load_object("source_data_" + str(k+1) + ".pkl")
+        source_samples = data[0]
         source_samples_list.append(source_samples)
-        sast, r = split_data_for_fqi(source_samples, state_dim, action_dim, reward_dim)
-        
-        X_predict = sast[:,0:3]
-        source_X.append(X_predict)
-        X_train = sast[0:n_gp*360,0:3]
-        
-        print("Fitting reward GP for source " + str(k))
-        y = r[0:n_gp*360]
-        gp_source_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
-        gp_source_rw.fit(X_train,y)
-        print("Predicting reward for source " + str(k))
-        mu_gp_s_rw, std_gp_s_rw = gp_source_rw.predict(X_predict,return_std=True)
-        source_predictions_rw.append((mu_gp_s_rw, std_gp_s_rw))
-        del gp_source_rw
-        
-        print("Fitting transition GP for source " + str(k))
-        y = sast[0:n_gp*360,3]
-        gp_source_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
-        gp_source_st.fit(X_train,y)
-        print("Predicting transitions for source " + str(k))
-        mu_gp_s_st, std_gp_s_st = gp_source_st.predict(X_predict,return_std=True)
-        source_predictions_st.append((mu_gp_s_st, std_gp_s_st))
-        del gp_source_st
+        source_X.append(source_samples[:,0:3])
+        source_predictions_rw.append(data[1])
+        source_predictions_st.append(data[2])
+        del source_samples
+        del data
 
 for n_target in [1,5,10,20,30,40,50,100]:
     
@@ -136,12 +116,12 @@ for n_target in [1,5,10,20,30,40,50,100]:
 
         print("Fitting target reward GP")
         y = r[(n_target*360-n_gp*360):n_target*360]
-        gp_target_rw = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
+        gp_target_rw = GaussianProcessRegressor(kernel = kernel_rw, n_restarts_optimizer = 10)
         gp_target_rw.fit(X_train,y)
         
         print("Fitting target transition GP")
         y = sast[(n_target*360-n_gp*360):n_target*360,3]
-        gp_target_st = GaussianProcessRegressor(n_restarts_optimizer=10, alpha=0.1)
+        gp_target_st = GaussianProcessRegressor(kernel = kernel_st, n_restarts_optimizer = 10)
         gp_target_st.fit(X_train,y)
         
         for k in range(len(source_mdps)):
