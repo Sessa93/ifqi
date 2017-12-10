@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.gaussian_process.kernels import (RBF, Matern, RationalQuadratic,
                                               ExpSineSquared, DotProduct,
-                                              ConstantKernel)
+                                              ConstantKernel, WhiteKernel)
 
 n_episodes = 30
 
@@ -40,6 +40,8 @@ kernels = [1.0 * RBF(length_scale=1.0, length_scale_bounds=scale_bounds),
            1.0 * Matern(length_scale=1.0, length_scale_bounds=scale_bounds, nu=1.5)]
 
 for kernel in kernels:
+    
+    kernel = kernel + WhiteKernel(noise_level = 10.0, noise_level_bounds=(1.0, 50.0))
     
     start = time.time()
     

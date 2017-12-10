@@ -8,7 +8,7 @@ from ifqi.models.regressor import Regressor
 import json
 import scipy.stats as stats
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import (RBF, Matern, RationalQuadratic)
+from sklearn.gaussian_process.kernels import (RBF, Matern, RationalQuadratic, WhiteKernel)
 import pickle
 import json
 import math
@@ -36,7 +36,7 @@ max_weight = 1000
 
 # Kernels
 kernel_rw = 20.0 * Matern(length_scale=10.0, length_scale_bounds=(1e-1, 100.0), nu=1.5)
-kernel_st = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.01,1000.0)) + 1.0 * RationalQuadratic(length_scale=1.0, alpha=0.1)
+kernel_st = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.01,1000.0)) + WhiteKernel(noise_level = 10.0, noise_level_bounds=(1.0, 50.0))
 
 # File to save results
 perf_file = open('perf_dam_transfer_' + str(n_source) + '.txt', 'w')

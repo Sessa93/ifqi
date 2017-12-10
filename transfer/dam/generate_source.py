@@ -4,7 +4,7 @@ from ifqi.evaluation import evaluation
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from sklearn.gaussian_process.kernels import (RBF, Matern, RationalQuadratic)
+from sklearn.gaussian_process.kernels import (RBF, Matern, RationalQuadratic, WhiteKernel)
 import pickle
 import time
 
@@ -48,7 +48,7 @@ def fit_gp(X, X_train, X_test, y_train, y_test, kernel):
 # Number of source samples (in years)
 n_source = 30
 # Test fraction
-test_fraction = 0.3
+test_fraction = 0
 # Source ID
 source_id = 1
 # Whether data should be loaded
@@ -56,11 +56,11 @@ load_data = False
 # Whether to fit reward
 fit_rw = True
 # Whether to fit transfition
-fit_st = False
+fit_st = True
 
 # Kernels
 kernel_rw = 20.0 * Matern(length_scale=10.0, length_scale_bounds=(1e-1, 100.0), nu=1.5)
-kernel_st = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.01,1000.0)) + 1.0 * RationalQuadratic(length_scale=1.0, alpha=0.1)
+kernel_st = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.01,1000.0)) + WhiteKernel(noise_level = 10.0, noise_level_bounds=(1.0, 50.0))
 
 # Tasks definition
 source_mdp_1 = envs.Dam(capacity = 500.0, demand = 10.0, flooding = 200.0, inflow_profile = 2, inflow_std = 4.0, alpha = 0.8, beta = 0.2)
