@@ -59,7 +59,7 @@ fit_rw = True
 fit_st = True
 
 # Kernels
-kernel_rw = 20.0 * Matern(length_scale=10.0, length_scale_bounds=(1e-1, 1000.0), nu=1.5)
+kernel_rw = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.1, 1000.0))
 kernel_st = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0.01,1000.0)) + WhiteKernel(noise_level = 10.0, noise_level_bounds=(1.0, 50.0))
 
 # Tasks definition
