@@ -28,7 +28,7 @@ max_gp = 30
 # Number of repetitions of each run
 n_runs = 10
 # Variance of the reward model
-var_rw = 0.5
+var_rw = 1.0
 # Variance of the transition model
 var_st = 20.0
 # Weight discard threshold
@@ -82,11 +82,11 @@ if n_source > 0:
         source_samples_list.append(source_samples)
         source_X.append(source_samples[:,0:3])
         source_predictions_rw.append(data[1])
-        source_predictions_st.append(data[2])
+        source_predictions_st.append((data[2][0], data[2][1]-np.min(data[2][1])))
         del source_samples
         del data
 
-for n_target in [1,5,10,20,30,40,50,100]:
+for n_target in [1,5,10,20,30,40,50]:
     
     print("Starting N = " + str(n_target))
     # List storing the performance of each run
@@ -132,6 +132,7 @@ for n_target in [1,5,10,20,30,40,50,100]:
             X_predict = source_X[k]
             mu_gp_t_rw, std_gp_t_rw = gp_target_rw.predict(X_predict,return_std=True)
             mu_gp_t_st, std_gp_t_st = gp_target_st.predict(X_predict,return_std=True)
+            std_gp_t_st = std_gp_t_st - np.min(std_gp_t_st)
             
             # Get source predictions
             mu_gp_s_rw, std_gp_s_rw = source_predictions_rw[k]
